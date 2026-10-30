@@ -6,7 +6,7 @@ export const MASTERY_THRESHOLDS = [5, 10, 15, 20, 25, 30] as const
 /** Mastery the second player starts with, as compensation for going second. */
 export const SECOND_PLAYER_START_MASTERY = 1
 /** Quick successive taps on one resource within this window merge into one gesture. */
-export const GESTURE_WINDOW_MS = 1500
+export const GESTURE_WINDOW_MS = 1000
 
 export function newPlayer(startMastery = 0): PlayerState {
   return {
