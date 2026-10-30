@@ -1,16 +1,21 @@
+import { useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useGame } from './store/gameStore'
+import { usePhotos } from './store/photoStore'
 import { useWakeLock } from './hooks/useWakeLock'
 import { Home } from './screens/Home'
+import { Photos } from './screens/Photos'
 import { Pick } from './screens/Pick'
 import { Versus } from './screens/Versus'
 import { Board } from './screens/Board'
 import { EndGame } from './screens/EndGame'
 
-const screens = { home: Home, pick: Pick, versus: Versus, board: Board, endgame: EndGame } as const
+const screens = { home: Home, photos: Photos, pick: Pick, versus: Versus, board: Board, endgame: EndGame } as const
 
 export default function App() {
   const phase = useGame((s) => s.phase)
+  const loadPhotos = usePhotos((s) => s.load)
+  useEffect(() => void loadPhotos(), [loadPhotos])
   useWakeLock(phase === 'board')
   const Screen = screens[phase]
 

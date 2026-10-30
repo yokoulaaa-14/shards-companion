@@ -37,6 +37,8 @@ interface GameState {
 
   startNewGame: () => void
   resumeGame: () => void
+  openPhotos: () => void
+  goHome: () => void
   pickHero: (choice: HeroId | 'random') => void
   fight: () => void
   tap: (resource: Resource, delta: number) => void
@@ -78,6 +80,9 @@ export const useGame = create<GameState>()(
       resumeGame: () => {
         if (get().phase === 'home' && get().turn > 0) set({ phase: 'board' })
       },
+
+      openPhotos: () => set({ phase: 'photos' }),
+      goHome: () => set({ phase: 'home' }),
 
       pickHero: (choice) => {
         const { pickStep, players } = get()

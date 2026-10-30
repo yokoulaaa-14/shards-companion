@@ -4,6 +4,7 @@ import { Button } from '../components/ui'
 export function Home() {
   const startNewGame = useGame((s) => s.startNewGame)
   const resumeGame = useGame((s) => s.resumeGame)
+  const openPhotos = useGame((s) => s.openPhotos)
   const canResume = useGame((s) => s.turn > 0 && s.phase === 'home')
 
   return (
@@ -24,6 +25,9 @@ export function Home() {
             Resume game
           </Button>
         )}
+        <Button variant="ghost" className="h-10 text-[11px]" onClick={openPhotos}>
+          Hero photos
+        </Button>
         <p className="text-center text-[10px] leading-relaxed text-muted/70">
           Unofficial fan-made tool. Not affiliated with Stone Blade Entertainment. No game content included.
         </p>

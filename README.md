@@ -30,7 +30,9 @@ npx vitest run
 
 ## Hero art
 
-Card photos are personal and git-ignored. See `public/art/README.md`. Without them the app uses one colour per hero.
+The app ships with one colour per hero and no card artwork. On your phone, open **Hero photos** from the home screen and pick a photo of each card: it is downscaled and stored in the browser's local database on that device only, never uploaded or committed.
+
+For development on a laptop, a git-ignored `public/art/<heroId>.jpg` is also picked up. See `public/art/README.md`.
 
 ## Stack
 

@@ -24,4 +24,4 @@ export interface AttackState {
   shield: number
 }
 
-export type Phase = 'home' | 'pick' | 'versus' | 'board' | 'endgame'
+export type Phase = 'home' | 'photos' | 'pick' | 'versus' | 'board' | 'endgame'
