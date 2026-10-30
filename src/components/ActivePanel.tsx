@@ -108,7 +108,7 @@ export function ActivePanel({ index, player }: Props) {
                 {buyBlockedLabel}
               </Button>
             ) : (
-              <Button variant="secondary" className="h-8 text-[11px]" onClick={buy}>
+              <Button variant="primary" className="h-8 text-[11px]" onClick={buy}>
                 Focus : −1 gem, +1 mastery
               </Button>
             )
