@@ -3,8 +3,9 @@ import { persist } from 'zustand/middleware'
 import type { AttackState, HeroId, Phase, PlayerState, Resource } from '../game/types'
 import { randomHero } from '../game/heroes'
 import {
-  applyGesture,
+  applyTap,
   buyMastery,
+  recordGesture,
   endOfTurnReset,
   GESTURE_WINDOW_MS,
   isDefeated,
@@ -48,6 +49,8 @@ interface GameState {
   undoBuyMastery: () => void
   toggleInfinity: () => void
   openAttack: () => void
+  /** Apply `damage` to the opponent, reset the active player's turn resources and pass the turn. */
+  endTurn: (damage: number) => void
   setOnChampions: (n: number) => void
   setShield: (n: number) => void
   confirmStep1: () => void
@@ -96,15 +99,21 @@ export const useGame = create<GameState>()(
 
       fight: () => set({ phase: 'board', active: 0, turn: 1 }),
 
+      // Each tap changes the value at once. Quick successive taps on one resource
+      // form a gesture whose running total is shown, then becomes the undo amount.
       tap: (resource, delta) => {
         const { active, pending } = get()
         const sameGesture = pending && pending.player === active && pending.resource === resource
-        // A tap on another resource closes the gesture in progress first.
         if (pending && !sameGesture) get().commitPending()
-        const merged = sameGesture
-          ? { ...pending, delta: pending.delta + delta }
-          : { player: active, resource, delta }
-        set({ pending: merged })
+        const players = [...get().players] as [PlayerState, PlayerState]
+        const { player, applied } = applyTap(players[active], resource, delta)
+        players[active] = player
+        const current = get().pending
+        const merged =
+          current && current.player === active && current.resource === resource
+            ? { ...current, delta: current.delta + applied }
+            : { player: active, resource, delta: applied }
+        set({ players, pending: merged })
         if (gestureTimer) clearTimeout(gestureTimer)
         gestureTimer = setTimeout(() => useGame.getState().commitPending(), GESTURE_WINDOW_MS)
       },
@@ -117,7 +126,7 @@ export const useGame = create<GameState>()(
         }
         if (!pending) return
         const next = [...players] as [PlayerState, PlayerState]
-        next[pending.player] = applyGesture(next[pending.player], pending.resource, pending.delta).player
+        next[pending.player] = recordGesture(next[pending.player], pending.resource, pending.delta)
         set({ players: next, pending: null })
       },
 
@@ -159,7 +168,25 @@ export const useGame = create<GameState>()(
           set({ phase: 'endgame', winner: active, attack: null })
           return
         }
+        // Nothing to deal: pass the turn without the attack steps.
+        if (players[active].power === 0) {
+          get().endTurn(0)
+          return
+        }
         set({ attack: { step: 1, onChampions: 0, shield: 0 } })
+      },
+
+      endTurn: (damage) => {
+        const { active, players, turn } = get()
+        const defenderIndex: PlayerIndex = active === 0 ? 1 : 0
+        const next = [...players] as [PlayerState, PlayerState]
+        next[defenderIndex] = takeDamage(next[defenderIndex], damage)
+        next[active] = endOfTurnReset(next[active])
+        if (isDefeated(next[defenderIndex])) {
+          set({ players: next, attack: null, phase: 'endgame', winner: active })
+          return
+        }
+        set({ players: next, attack: null, active: defenderIndex, turn: turn + 1, pending: null })
       },
 
       setOnChampions: (n) => {
@@ -188,19 +215,11 @@ export const useGame = create<GameState>()(
       cancelAttack: () => set({ attack: null }),
 
       validateShield: () => {
-        const { attack, active, players, turn } = get()
+        const { attack, active, players } = get()
         if (!attack) return
         const attacker = players[active]
-        const defenderIndex: PlayerIndex = active === 0 ? 1 : 0
         const { damage } = resolveAttack({ power: attacker.power, onChampions: attack.onChampions, shield: attack.shield })
-        const next = [...players] as [PlayerState, PlayerState]
-        next[defenderIndex] = takeDamage(next[defenderIndex], damage)
-        next[active] = endOfTurnReset(attacker)
-        if (isDefeated(next[defenderIndex])) {
-          set({ players: next, attack: null, phase: 'endgame', winner: active })
-          return
-        }
-        set({ players: next, attack: null, active: defenderIndex, turn: turn + 1 })
+        get().endTurn(damage)
       },
     }),
     {

@@ -30,7 +30,10 @@ export function ActivePanel({ index, player }: Props) {
   const buyBlockedLabel = player.mastery >= MAX_MASTERY ? 'Mastery is maxed' : 'Buy +1 · need 1 gem'
 
   return (
-    <div className={`flex h-full gap-3 p-3 ${side === 'right' ? 'flex-row-reverse' : ''}`}>
+    <div
+      className={`flex h-full gap-3 p-3 ${side === 'right' ? 'flex-row-reverse' : ''}`}
+      style={{ backgroundColor: `color-mix(in srgb, ${hero.color} 14%, var(--color-ink))` }}
+    >
       {/* Hero column */}
       <div className="flex w-[31%] min-w-[180px] flex-col gap-2">
         <div className="flex h-6 items-center gap-2">
@@ -60,7 +63,6 @@ export function ActivePanel({ index, player }: Props) {
           undoAmount={player.undo.health}
           onTap={(d) => tap('health', d)}
           onUndo={() => undo('health')}
-          layout="stacked"
         />
 
         <Counter
@@ -108,7 +110,7 @@ export function ActivePanel({ index, player }: Props) {
         />
 
         {player.powerInfinite ? (
-          <div className="flex flex-col gap-1.5 rounded-lg border border-line bg-panel p-2.5">
+          <div className="flex flex-col gap-1.5 rounded-lg border border-line bg-panel/70 p-2.5">
             <div className="flex h-5 items-center">
               <Label>Power</Label>
             </div>

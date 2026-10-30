@@ -35,11 +35,12 @@ export function clampResource(resource: Resource, value: number): number {
 }
 
 /**
- * Apply a committed gesture (sum of quick taps) to one resource.
- * Returns the new player and the delta that was really applied after clamping,
- * which is what UNDO must revert.
+ * Apply one tap to a resource immediately. Quick successive taps form a gesture:
+ * the tap clears any older undo entry for that resource, and `recordGesture`
+ * stores the gesture's total once it ends. Returns the delta really applied
+ * after clamping.
  */
-export function applyGesture(
+export function applyTap(
   player: PlayerState,
   resource: Resource,
   delta: number,
@@ -48,11 +49,7 @@ export function applyGesture(
   const after = clampResource(resource, before + delta)
   const applied = after - before
   const undo = { ...player.undo }
-  if (applied === 0) {
-    delete undo[resource]
-  } else {
-    undo[resource] = applied
-  }
+  delete undo[resource]
   const touchesBuy = resource === 'gems' || resource === 'mastery'
   return {
     player: {
@@ -63,6 +60,20 @@ export function applyGesture(
     },
     applied,
   }
+}
+
+/** Close a gesture: remember its total so UNDO can revert exactly that. */
+export function recordGesture(player: PlayerState, resource: Resource, total: number): PlayerState {
+  const undo = { ...player.undo }
+  if (total === 0) delete undo[resource]
+  else undo[resource] = total
+  return { ...player, undo }
+}
+
+/** Apply a whole gesture at once (taps then record). Convenience for tests and tools. */
+export function applyGesture(player: PlayerState, resource: Resource, delta: number): PlayerState {
+  const { player: tapped, applied } = applyTap(player, resource, delta)
+  return recordGesture(tapped, resource, applied)
 }
 
 export function undoGesture(player: PlayerState, resource: Resource): PlayerState {
@@ -152,10 +163,7 @@ export function endOfTurnReset(player: PlayerState): PlayerState {
   }
 }
 
-/** Fill ratio (0..1) of each of the six 5-point mastery segments. */
-export function masterySegments(mastery: number): number[] {
-  return MASTERY_THRESHOLDS.map((t) => {
-    const part = Math.max(0, Math.min(5, mastery - (t - 5)))
-    return part / 5
-  })
+/** One flag per mastery check (5, 10, … 30): true once that threshold is reached. */
+export function masteryReached(mastery: number): boolean[] {
+  return MASTERY_THRESHOLDS.map((t) => mastery >= t)
 }

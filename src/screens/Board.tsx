@@ -14,7 +14,7 @@ export function Board() {
       <motion.div
         key={i}
         layout
-        className={`relative h-full overflow-hidden ${isActive ? 'bg-ink' : ''} ${i === 0 ? 'border-r border-line' : ''}`}
+        className={`relative h-full overflow-hidden ${i === 0 ? 'border-r border-line' : ''}`}
         animate={{ flexBasis: isActive ? '80%' : '20%' }}
         transition={{ type: 'spring', stiffness: 260, damping: 32 }}
         style={{ flexGrow: 0, flexShrink: 0 }}

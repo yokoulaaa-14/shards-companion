@@ -1,23 +1,16 @@
-import { MASTERY_THRESHOLDS, masterySegments } from '../game/rules'
+import { MASTERY_THRESHOLDS, masteryReached } from '../game/rules'
 
+/** Six checks (5 … 30). A bar fills only once its threshold is reached. */
 export function MasteryBar({ mastery }: { mastery: number }) {
-  const segments = masterySegments(mastery)
+  const reached = masteryReached(mastery)
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex h-2.5 gap-0.5">
-        {segments.map((fill, i) => (
-          <div key={i} className="flex flex-1 overflow-hidden rounded-sm border border-line bg-ink">
-            <div className="h-full bg-paper transition-[width] duration-300" style={{ width: `${fill * 100}%` }} />
-          </div>
-        ))}
-      </div>
-      <div className="flex justify-between font-display text-[9px] font-bold tracking-widest text-muted">
-        {MASTERY_THRESHOLDS.map((t) => (
-          <span key={t} className={mastery >= t ? 'text-paper' : ''}>
-            {t}
-          </span>
-        ))}
-      </div>
+    <div className="flex gap-1">
+      {MASTERY_THRESHOLDS.map((t, i) => (
+        <div key={t} className="flex flex-1 flex-col items-center gap-1">
+          <div className={`h-2.5 w-full rounded-sm border border-line transition-colors duration-300 ${reached[i] ? 'bg-paper' : 'bg-ink'}`} />
+          <span className={`font-display text-[9px] font-bold leading-none tracking-widest ${reached[i] ? 'text-paper' : 'text-muted'}`}>{t}</span>
+        </div>
+      ))}
     </div>
   )
 }

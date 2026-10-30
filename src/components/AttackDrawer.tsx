@@ -48,7 +48,7 @@ export function AttackDrawer() {
             {attackerHero.name} · End turn · Step 1 of 2
           </Label>
           <h2 className="font-display text-2xl font-bold leading-tight">
-            {attacker.power} Power. How much on {defenderHero.name}'s champions?
+            {attacker.power} Power accumulated. How much on {defenderHero.name}'s champions?
           </h2>
           <div className="grid grid-cols-2 gap-2.5">
             <Stepper

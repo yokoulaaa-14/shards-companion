@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
+import * as rules from './rules'
 import {
   applyGesture,
   buyMastery,
   canBuyMastery,
   endOfTurnReset,
   isDefeated,
-  masterySegments,
+  masteryReached,
   newPlayer,
   resolveAttack,
   takeDamage,
@@ -17,32 +18,31 @@ import { randomHero } from './heroes'
 
 describe('gestures and undo', () => {
   it('applies a merged gesture and records it for undo', () => {
-    const { player, applied } = applyGesture(newPlayer(), 'power', 6)
+    const player = applyGesture(newPlayer(), "power", 6)
     expect(player.power).toBe(6)
-    expect(applied).toBe(6)
     expect(player.undo.power).toBe(6)
   })
 
   it('undo reverts exactly the committed gesture', () => {
-    const a = applyGesture(newPlayer(), 'gems', 3).player
-    const b = applyGesture(a, 'gems', -1).player
+    const a = applyGesture(newPlayer(), "gems", 3)
+    const b = applyGesture(a, "gems", -1)
     expect(b.gems).toBe(2)
     expect(undoGesture(b, 'gems').gems).toBe(3)
   })
 
   it('clamps health to 0..50 and undoes only what was applied', () => {
     const p0 = { ...newPlayer(), health: 48 }
-    const { player, applied } = applyGesture(p0, 'health', 5)
+    const player = applyGesture(p0, "health", 5)
     expect(player.health).toBe(50)
-    expect(applied).toBe(2)
+    expect(player.undo.health).toBe(2)
     expect(undoGesture(player, 'health').health).toBe(48)
-    const low = applyGesture({ ...newPlayer(), health: 2 }, 'health', -9).player
+    const low = applyGesture({ ...newPlayer(), health: 2 }, "health", -9)
     expect(low.health).toBe(0)
   })
 
   it('clamps mastery to 30 and turn resources to >= 0', () => {
-    expect(applyGesture({ ...newPlayer(), mastery: 29 }, 'mastery', 3).player.mastery).toBe(30)
-    expect(applyGesture(newPlayer(), 'power', -4).player.power).toBe(0)
+    expect(applyGesture({ ...newPlayer(), mastery: 29 }, "mastery", 3).mastery).toBe(30)
+    expect(applyGesture(newPlayer(), "power", -4).power).toBe(0)
   })
 })
 
@@ -68,7 +68,7 @@ describe('buy mastery', () => {
 
   it('a later change on gems or mastery disables the ghost undo', () => {
     const bought = buyMastery({ ...newPlayer(), gems: 2 })
-    const later = applyGesture(bought, 'gems', 2).player
+    const later = applyGesture(bought, "gems", 2)
     expect(later.buyUndoable).toBe(false)
     expect(undoBuyMastery(later)).toBe(later)
   })
@@ -94,7 +94,7 @@ describe('attack resolution', () => {
 describe('turn lifecycle', () => {
   it('end of turn clears gems, power, infinity, buy flag and undo history', () => {
     const busy = {
-      ...applyGesture(buyMastery({ ...newPlayer(), gems: 4 }), 'power', 7).player,
+      ...applyGesture(buyMastery({ ...newPlayer(), gems: 4 }), "power", 7),
       powerInfinite: true,
     }
     const reset = endOfTurnReset(busy)
@@ -107,18 +107,18 @@ describe('turn lifecycle', () => {
   })
 
   it('infinity remembers and restores the previous power', () => {
-    const p = applyGesture(newPlayer(), 'power', 5).player
+    const p = applyGesture(newPlayer(), "power", 5)
     const inf = toggleInfinity(p)
     expect(inf.powerInfinite).toBe(true)
     expect(toggleInfinity(inf).power).toBe(5)
   })
 })
 
-describe('mastery bar', () => {
-  it('fills segments progressively', () => {
-    expect(masterySegments(0)).toEqual([0, 0, 0, 0, 0, 0])
-    expect(masterySegments(12)).toEqual([1, 1, 0.4, 0, 0, 0])
-    expect(masterySegments(30)).toEqual([1, 1, 1, 1, 1, 1])
+describe("mastery bar", () => {
+  it("fills a segment only once its threshold is reached", () => {
+    expect(masteryReached(0)).toEqual([false, false, false, false, false, false])
+    expect(masteryReached(17)).toEqual([true, true, true, false, false, false])
+    expect(masteryReached(30)).toEqual([true, true, true, true, true, true])
   })
 })
 
@@ -128,5 +128,28 @@ describe('random hero', () => {
       expect(randomHero(['tetra'])).not.toBe('tetra')
     }
     expect(randomHero(['decima', 'kosynwu', 'tetra', 'volos'], () => 0.99)).toBe('rez')
+  })
+})
+
+describe('instant taps', () => {
+  it('each tap changes the value at once and the gesture total becomes the undo', () => {
+    const { applyTap, recordGesture } = rules
+    let p = newPlayer()
+    let total = 0
+    for (const d of [1, 1, 1, -1]) {
+      const r = applyTap(p, 'power', d)
+      p = r.player
+      total += r.applied
+    }
+    expect(p.power).toBe(2)
+    expect(p.undo.power).toBeUndefined()
+    p = recordGesture(p, 'power', total)
+    expect(p.undo.power).toBe(2)
+    expect(undoGesture(p, 'power').power).toBe(0)
+  })
+
+  it('a new tap clears the previous undo of that resource', () => {
+    const p = applyGesture(newPlayer(), 'gems', 3)
+    expect(rules.applyTap(p, 'gems', 1).player.undo.gems).toBeUndefined()
   })
 })
