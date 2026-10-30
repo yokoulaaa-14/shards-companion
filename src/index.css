@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Rajdhani", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+
+  --color-ink: #0b0b0d;
+  --color-panel: #15161a;
+  --color-panel-2: #1d1f25;
+  --color-line: #2c2f38;
+  --color-muted: #9aa0ad;
+  --color-paper: #f4f2ec;
+
+  --color-decima: #e3b341;
+  --color-kosynwu: #7a46c9;
+  --color-tetra: #2f7fd1;
+  --color-volos: #3f9a4a;
+  --color-rez: #d23a3a;
+  --color-random: #6b7280;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a { touch-action: manipulation; }
+
+.font-display { font-family: var(--font-display); }
+
+/* Safe areas on notched phones in landscape */
+#root {
+  box-sizing: border-box;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}

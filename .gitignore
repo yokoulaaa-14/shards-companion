@@ -1,0 +1,25 @@
+# dependencies and build
+node_modules
+dist
+dist-ssr
+*.local
+
+# logs
+logs
+*.log
+npm-debug.log*
+
+# editor / os
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+
+# vercel
+.vercel
+
+# Card art is personal (photos of the physical cards) and must never be committed.
+# Drop your images in public/art/<heroId>.jpg locally; the app falls back to the hero colour.
+public/art/*
+!public/art/README.md
