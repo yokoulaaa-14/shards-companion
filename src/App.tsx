@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useGame } from './store/gameStore'
 import { usePhotos } from './store/photoStore'
 import { useWakeLock } from './hooks/useWakeLock'
+import { useTimerLifecycle } from './hooks/useTimerLifecycle'
 import { Home } from './screens/Home'
 import { Photos } from './screens/Photos'
 import { Pick } from './screens/Pick'
@@ -17,6 +18,7 @@ export default function App() {
   const loadPhotos = usePhotos((s) => s.load)
   useEffect(() => void loadPhotos(), [loadPhotos])
   useWakeLock(phase === 'board')
+  useTimerLifecycle()
   const Screen = screens[phase]
 
   return (

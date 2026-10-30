@@ -17,6 +17,7 @@ import {
   undoBuyMastery,
   undoGesture,
 } from '../game/rules'
+import { elapsedAt, pauseTimer, resumeTimer, startTimer, stoppedTimer, type GameTimer } from '../game/timer'
 
 export type PlayerIndex = 0 | 1
 
@@ -35,7 +36,14 @@ interface GameState {
   attack: AttackState | null
   winner: PlayerIndex | null
   pending: PendingGesture | null
+  /** Game time; starts on FIGHT, paused by the menu, the background and the end of the game. */
+  timer: GameTimer
+  menuOpen: boolean
 
+  openMenu: () => void
+  closeMenu: () => void
+  /** Called on visibility changes: the timer only counts while the board is on screen. */
+  setVisible: (visible: boolean) => void
   startNewGame: () => void
   resumeGame: () => void
   openPhotos: () => void
@@ -77,20 +85,38 @@ export const useGame = create<GameState>()(
       attack: null,
       winner: null,
       pending: null,
+      timer: stoppedTimer(),
+      menuOpen: false,
+
+      openMenu: () => {
+        get().commitPending()
+        set({ menuOpen: true, timer: pauseTimer(get().timer, Date.now()) })
+      },
+
+      closeMenu: () => {
+        const { phase, timer } = get()
+        set({ menuOpen: false, timer: phase === 'board' ? resumeTimer(timer, Date.now()) : timer })
+      },
+
+      setVisible: (visible) => {
+        const { phase, menuOpen, timer } = get()
+        if (!visible) set({ timer: pauseTimer(timer, Date.now()) })
+        else if (phase === 'board' && !menuOpen) set({ timer: resumeTimer(timer, Date.now()) })
+      },
 
       startNewGame: () =>
-        set({ phase: 'pick', pickStep: 0, players: freshPlayers(), active: 0, turn: 0, attack: null, winner: null, pending: null }),
+        set({ phase: 'pick', pickStep: 0, players: freshPlayers(), active: 0, turn: 0, attack: null, winner: null, pending: null, timer: stoppedTimer(), menuOpen: false }),
 
       resumeGame: () => {
-        if (get().phase === 'home' && get().turn > 0) set({ phase: 'board' })
+        if (get().phase === 'home' && get().turn > 0) set({ phase: 'board', timer: resumeTimer(get().timer, Date.now()) })
       },
 
       openPhotos: () => set({ phase: 'photos' }),
-      goHome: () => set({ phase: 'home' }),
+      goHome: () => set({ phase: 'home', menuOpen: false, timer: pauseTimer(get().timer, Date.now()) }),
 
       /** After the end game: wipe the finished game and return to the home screen. */
       finishGame: () =>
-        set({ phase: 'home', pickStep: 0, players: freshPlayers(), active: 0, turn: 0, attack: null, winner: null, pending: null }),
+        set({ phase: 'home', pickStep: 0, players: freshPlayers(), active: 0, turn: 0, attack: null, winner: null, pending: null, timer: stoppedTimer(), menuOpen: false }),
 
       pickHero: (choice) => {
         const { pickStep, players } = get()
@@ -102,7 +128,7 @@ export const useGame = create<GameState>()(
         else set({ players: next, phase: 'versus' })
       },
 
-      fight: () => set({ phase: 'board', active: 0, turn: 1 }),
+      fight: () => set({ phase: 'board', active: 0, turn: 1, timer: startTimer(Date.now()) }),
 
       // Each tap changes the value at once. Quick successive taps on one resource
       // form a gesture whose running total is shown, then becomes the undo amount.
@@ -170,7 +196,7 @@ export const useGame = create<GameState>()(
         get().commitPending()
         const { active, players } = get()
         if (players[active].powerInfinite) {
-          set({ phase: 'endgame', winner: active, attack: null })
+          set({ phase: 'endgame', winner: active, attack: null, timer: pauseTimer(get().timer, Date.now()) })
           return
         }
         // Nothing to deal: pass the turn without the attack steps.
@@ -188,7 +214,7 @@ export const useGame = create<GameState>()(
         next[defenderIndex] = takeDamage(next[defenderIndex], damage)
         next[active] = endOfTurnReset(next[active])
         if (isDefeated(next[defenderIndex])) {
-          set({ players: next, attack: null, phase: 'endgame', winner: active })
+          set({ players: next, attack: null, phase: 'endgame', winner: active, timer: pauseTimer(get().timer, Date.now()) })
           return
         }
         set({ players: next, attack: null, active: defenderIndex, turn: turn + 1, pending: null })
@@ -237,6 +263,8 @@ export const useGame = create<GameState>()(
         turn: s.turn,
         attack: s.attack,
         winner: s.winner,
+        // Saved as a paused snapshot: time while the app is closed never counts.
+        timer: { elapsedMs: elapsedAt(s.timer, Date.now()), runningSince: null },
       }),
     },
   ),

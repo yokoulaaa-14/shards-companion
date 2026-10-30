@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { getHero } from '../game/heroes'
+import { averageTurnMs, elapsedAt, formatDuration } from '../game/timer'
 import { opponentOf, useGame } from '../store/gameStore'
 import { HeroArt } from '../components/HeroArt'
 import { Button, Label } from '../components/ui'
@@ -26,19 +27,29 @@ export function EndGame() {
   const loser = opponentOf(winner)
   const winHero = getHero(snapshot.players[winner].hero!)
   const loseHero = getHero(snapshot.players[loser].hero!)
-  return <EndGameView winner={winner} winHero={winHero} loseHero={loseHero} stage={stage} onRestart={finishGame} />
+  const gameMs = elapsedAt(snapshot.timer, Date.now())
+  const stats = {
+    time: formatDuration(gameMs),
+    turns: snapshot.turn,
+    avgTurn: formatDuration(averageTurnMs(gameMs, snapshot.turn)),
+    // A win by Infinity Shard leaves the opponent with health left.
+    byInfinity: snapshot.players[loser].health > 0,
+  }
+  return <EndGameView winner={winner} winHero={winHero} loseHero={loseHero} stats={stats} stage={stage} onRestart={finishGame} />
 }
 
 function EndGameView({
   winner,
   winHero,
   loseHero,
+  stats,
   stage,
   onRestart,
 }: {
   winner: 0 | 1
   winHero: ReturnType<typeof getHero>
   loseHero: ReturnType<typeof getHero>
+  stats: { time: string; turns: number; avgTurn: string; byInfinity: boolean }
   stage: 'strike' | 'winner'
   onRestart: () => void
 }) {
@@ -85,7 +96,7 @@ function EndGameView({
         {stage === 'winner' && (
           <motion.div
             key="winner"
-            className="absolute inset-0 flex items-center justify-center gap-8 p-8"
+            className="absolute inset-0 flex items-center justify-center gap-8 p-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
@@ -100,10 +111,15 @@ function EndGameView({
             </motion.div>
             <div className="flex w-80 flex-col gap-2 text-ink">
               <span className="font-display text-xs font-bold uppercase tracking-[0.3em] text-ink/70">Victory</span>
-              <h1 className="font-display text-5xl font-bold leading-none">{winHero.name} wins</h1>
+              <h1 className="font-display text-4xl font-bold leading-none">{winHero.name} wins</h1>
               <p className="text-sm text-ink/80">
-                Player {winner + 1} · {loseHero.name} is down to 0 health
+                Player {winner + 1} · {stats.byInfinity ? 'Infinity Shard unleashed' : `${loseHero.name} is down to 0 health`}
               </p>
+              <div className="grid grid-cols-3 gap-2">
+                <Stat label="Game time" value={stats.time} />
+                <Stat label="Turns" value={String(stats.turns)} />
+                <Stat label="Avg turn" value={stats.avgTurn} />
+              </div>
               <div className="mt-1 border-l-4 border-ink pl-3">
                 <span className="font-display text-[10px] font-bold uppercase tracking-[0.18em] text-ink/70">Faction {winHero.faction}</span>
                 <p className="text-sm font-medium">{winHero.playstyle.split('.')[0]}</p>
@@ -116,6 +132,15 @@ function EndGameView({
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  )
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5 rounded-lg bg-ink/85 px-2.5 py-1.5 text-paper">
+      <span className="font-display text-[9px] font-bold uppercase tracking-[0.16em] text-paper/60">{label}</span>
+      <span className="font-display text-xl font-bold leading-none tabular-nums">{value}</span>
     </div>
   )
 }

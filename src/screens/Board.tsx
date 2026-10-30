@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { ActivePanel } from '../components/ActivePanel'
 import { AttackDrawer } from '../components/AttackDrawer'
 import { GameMenu } from '../components/GameMenu'
+import { NavBar } from '../components/NavBar'
 import { WaitingPanel } from '../components/WaitingPanel'
 import { useGame } from '../store/gameStore'
 
@@ -27,8 +28,9 @@ export function Board() {
   })
 
   return (
-    <div className="relative flex h-full">
-      {panels}
+    <div className="relative flex h-full flex-col">
+      <NavBar />
+      <div className="flex min-h-0 flex-1">{panels}</div>
       <GameMenu />
       <AttackDrawer />
     </div>
