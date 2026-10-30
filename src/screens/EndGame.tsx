@@ -89,7 +89,7 @@ function EndGameView({
   const strikeX = winnerSide === 'left' ? 140 : -140
 
   return (
-    <div className="relative h-full overflow-hidden" style={{ backgroundColor: stage === 'winner' ? winHero.color : 'var(--color-ink)', transition: 'background-color 600ms' }}>
+    <div className="relative h-full overflow-hidden" style={{ backgroundColor: stage === 'winner' ? `color-mix(in srgb, ${winHero.color} 16%, var(--color-ink))` : 'var(--color-ink)', transition: 'background-color 600ms' }}>
       <AnimatePresence>
         {stage === 'strike' && (
           <div key="strike" className={`absolute inset-0 flex ${winnerSide === 'left' ? '' : 'flex-row-reverse'}`}>
@@ -133,17 +133,18 @@ function EndGameView({
             transition={{ duration: 0.5 }}
           >
             <motion.div
-              className="h-64 w-44 overflow-hidden rounded-2xl border-4 border-ink shadow-[12px_12px_0_#0b0b0d]"
+              className="h-64 w-44 overflow-hidden rounded-2xl border-4"
+              style={{ borderColor: winHero.color, boxShadow: `0 16px 40px rgba(0,0,0,0.5), 0 0 0 6px ${winHero.color}33` }}
               initial={{ scale: 0.8, rotate: -6 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: 'spring', stiffness: 200, damping: 16 }}
             >
               <HeroArt hero={winHero.id} className="h-full w-full" />
             </motion.div>
-            <div className="flex w-80 flex-col gap-2 text-ink">
-              <span className="font-display text-xs font-bold uppercase tracking-[0.3em] text-ink/70">Victory</span>
+            <div className="flex w-80 flex-col gap-2 text-paper">
+              <span className="font-display text-xs font-bold uppercase tracking-[0.3em]" style={{ color: winHero.color }}>Victory</span>
               <h1 className="font-display text-4xl font-bold leading-none">{winHero.name} wins</h1>
-              <p className="text-sm text-ink/80">
+              <p className="text-sm text-paper/75">
                 Player {winner + 1} · {stats.byInfinity ? 'Infinity Shard unleashed' : `${loseHero.name} is down to 0 health`}
               </p>
               <div className="grid grid-cols-3 gap-2">
@@ -151,20 +152,16 @@ function EndGameView({
                 <Stat label="Rounds" value={String(stats.rounds)} />
                 <Stat label="Avg turn" value={stats.avgTurn} />
               </div>
-              <div className="mt-1 border-l-4 border-ink pl-3">
-                <span className="font-display text-[10px] font-bold uppercase tracking-[0.18em] text-ink/70">Faction {winHero.faction}</span>
+              <div className="mt-1 border-l-4 pl-3" style={{ borderColor: winHero.color }}>
+                <span className="font-display text-[10px] font-bold uppercase tracking-[0.18em] text-muted">Faction {winHero.faction}</span>
                 <p className="text-sm font-medium">{winHero.playstyle.split('.')[0]}</p>
               </div>
               <div className="mt-2 flex gap-2.5">
-                <button
-                  type="button"
-                  onClick={onShowStats}
-                  className="inline-flex h-12 flex-1 items-center justify-center rounded-md border-2 border-ink font-display font-bold uppercase tracking-[0.12em] text-ink transition active:scale-[0.97] active:bg-ink/10"
-                >
-                  Show stats
-                </button>
-                <Button className="h-12 flex-1" style={{ backgroundColor: '#0b0b0d', color: '#f4f2ec' }} onClick={onHome}>
+                <Button variant="secondary" className="h-12 flex-1" onClick={onHome}>
                   Back to home
+                </Button>
+                <Button className="h-12 flex-1" onClick={onShowStats}>
+                  Show stats
                 </Button>
               </div>
             </div>
@@ -177,7 +174,7 @@ function EndGameView({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-0.5 rounded-lg bg-ink/85 px-2.5 py-1.5 text-paper">
+    <div className="flex flex-col gap-0.5 rounded-lg border border-line bg-panel/80 px-2.5 py-1.5 text-paper">
       <span className="font-display text-[9px] font-bold uppercase tracking-[0.16em] text-paper/60">{label}</span>
       <span className="font-display text-xl font-bold leading-none tabular-nums">{value}</span>
     </div>
