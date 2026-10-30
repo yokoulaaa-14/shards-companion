@@ -6,6 +6,10 @@ interface Props {
   label: string
   hint?: string
   value: ReactNode
+  /** Numeric value, used to disable − at `min` and + at `max`. */
+  current: number
+  min?: number
+  max?: number
   /** Running total of the gesture in progress; shown in the undo slot. */
   pending?: number
   /** Total of the last closed gesture; the undo slot becomes a button. */
@@ -19,9 +23,11 @@ interface Props {
 
 const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`)
 
-export function Counter({ label, hint, value, pending, undoAmount, onTap, onUndo, disabled, footer }: Props) {
+export function Counter({ label, hint, value, current, min = 0, max, pending, undoAmount, onTap, onUndo, disabled, footer }: Props) {
   const hasPending = !!pending
   const hasUndo = !hasPending && !!undoAmount && !!onUndo
+  const canDec = !disabled && current > min
+  const canInc = !disabled && (max === undefined || current < max)
   return (
     <div className="flex min-h-0 flex-col gap-1.5 rounded-lg border border-line bg-panel/70 p-2.5">
       <div className="flex h-5 items-center justify-between">
@@ -58,13 +64,13 @@ export function Counter({ label, hint, value, pending, undoAmount, onTap, onUndo
       </div>
 
       <div className="flex flex-1 items-center gap-2">
-        <Tap className="h-12 w-12" onClick={() => onTap?.(-1)} disabled={disabled} aria-label={`${label} minus one`}>
+        <Tap className="h-12 w-12" onClick={() => onTap?.(-1)} disabled={!canDec} aria-label={`${label} minus one`}>
           −
         </Tap>
         <div className="flex flex-1 items-center justify-center">
           <span className="font-display text-5xl font-bold leading-none tabular-nums">{value}</span>
         </div>
-        <Tap className="h-12 w-12" onClick={() => onTap?.(+1)} disabled={disabled} aria-label={`${label} plus one`}>
+        <Tap className="h-12 w-12" onClick={() => onTap?.(+1)} disabled={!canInc} aria-label={`${label} plus one`}>
           +
         </Tap>
       </div>

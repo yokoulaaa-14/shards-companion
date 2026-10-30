@@ -59,6 +59,8 @@ export function ActivePanel({ index, player }: Props) {
           label="Health"
           hint={`/ ${MAX_HEALTH}`}
           value={player.health}
+          current={player.health}
+          max={MAX_HEALTH}
           pending={pendingFor('health')}
           undoAmount={player.undo.health}
           onTap={(d) => tap('health', d)}
@@ -71,6 +73,8 @@ export function ActivePanel({ index, player }: Props) {
           value={
             <span className={player.mastery >= MAX_MASTERY ? 'rounded bg-paper px-2 text-ink' : ''}>{player.mastery}</span>
           }
+          current={player.mastery}
+          max={MAX_MASTERY}
           pending={pendingFor('mastery')}
           undoAmount={player.undo.mastery}
           onTap={(d) => tap('mastery', d)}
@@ -82,6 +86,7 @@ export function ActivePanel({ index, player }: Props) {
           label="Gems"
           hint="· this turn"
           value={player.gems}
+          current={player.gems}
           pending={pendingFor('gems')}
           undoAmount={player.undo.gems}
           onTap={(d) => tap('gems', d)}
@@ -93,7 +98,7 @@ export function ActivePanel({ index, player }: Props) {
                   ✓ Focus
                 </Button>
                 {player.buyUndoable && (
-                  <Button variant="ghost" className="h-8 flex-1 basis-0 text-[11px]" onClick={undoBuy} aria-label="Undo focus">
+                  <Button variant="secondary" className="h-8 flex-1 basis-0 text-[11px]" onClick={undoBuy} aria-label="Undo focus">
                     ↶ Undo
                   </Button>
                 )}
@@ -119,7 +124,7 @@ export function ActivePanel({ index, player }: Props) {
               <span className="rounded-md bg-paper px-4 font-display text-5xl font-bold leading-none text-ink">∞</span>
             </div>
             <CardFooter>
-              <Button variant="ghost" className="h-8 text-[11px]" onClick={toggleInfinity}>
+              <Button variant="secondary" className="h-8 text-[11px]" onClick={toggleInfinity}>
                 ↶ Cancel infinity
               </Button>
             </CardFooter>
@@ -129,12 +134,13 @@ export function ActivePanel({ index, player }: Props) {
             label="Power"
             hint="· this turn"
             value={player.power}
+            current={player.power}
             pending={pendingFor('power')}
             undoAmount={player.undo.power}
             onTap={(d) => tap('power', d)}
             onUndo={() => undo('power')}
             footer={
-              <Button variant="ghost" className="h-8 text-[11px]" onClick={toggleInfinity}>
+              <Button variant="secondary" className="h-8 text-[11px]" onClick={toggleInfinity}>
                 ∞ Infinity Shard
               </Button>
             }
