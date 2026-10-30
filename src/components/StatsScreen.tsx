@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { getHero, type Hero } from '../game/heroes'
 import { MAX_HEALTH } from '../game/rules'
@@ -16,27 +17,73 @@ interface Props {
   onHome: () => void
 }
 
-type Row = { label: string; get: (s: PlayerSummary) => number; format?: (n: number) => string; higherIsBetter?: boolean }
+/** Which value is better: 'high', 'low', or 'none' (no bold, e.g. durations that are neither good nor bad). */
+type Better = 'high' | 'low' | 'none'
+type Row = { label: string; get: (s: PlayerSummary) => number; format?: (n: number, s: PlayerSummary) => string; better?: Better }
 
-const ROWS: Row[] = [
-  { label: 'Damage dealt', get: (s) => s.damageDealt },
-  { label: 'Biggest hit', get: (s) => s.biggestHit },
-  { label: 'Power generated', get: (s) => s.powerGenerated },
-  { label: 'Power on champions', get: (s) => s.onChampions },
-  { label: 'Blocked by shields', get: (s) => s.shieldsBlocked },
-  { label: 'Gems gained', get: (s) => s.gemsGained },
-  { label: 'Mastery gained', get: (s) => s.masteryGained },
-  { label: 'Health healed', get: (s) => s.healed },
-  { label: 'Focus used', get: (s) => s.focusUsed },
-  { label: 'Avg turn', get: (s) => s.avgTurnMs, format: formatDuration, higherIsBetter: false },
-  { label: 'Longest turn', get: (s) => s.longestTurnMs, format: formatDuration, higherIsBetter: false },
+const decimal = (n: number) => n.toFixed(1)
+
+type Tab = 'totals' | 'best' | 'averages'
+
+const TABS: Array<{ id: Tab; label: string; rows: Row[] }> = [
+  {
+    id: 'totals',
+    label: 'Totals',
+    rows: [
+      { label: 'Power generated', get: (s) => s.powerGenerated },
+      { label: 'Damage dealt', get: (s) => s.damageDealt },
+      { label: 'Power on champions', get: (s) => s.onChampions },
+      { label: 'Blocked by shields', get: (s) => s.shieldsBlocked },
+      { label: 'Gems gained', get: (s) => s.gemsGained },
+      { label: 'Mastery gained', get: (s) => s.masteryGained },
+      { label: 'Health healed', get: (s) => s.healed },
+      { label: 'Focus used', get: (s) => s.focusUsed, format: (n, s) => `${n} / ${s.turns}` },
+    ],
+  },
+  {
+    id: 'best',
+    label: 'Best turn',
+    rows: [
+      { label: 'Most Power', get: (s) => s.mostPower },
+      { label: 'Biggest hit', get: (s) => s.biggestHit },
+      { label: 'Most Gems', get: (s) => s.mostGems },
+      { label: 'Most Mastery', get: (s) => s.mostMastery },
+      { label: 'Most healing', get: (s) => s.mostHealing },
+      { label: 'Longest turn', get: (s) => s.longestTurnMs, format: formatDuration, better: 'none' },
+      { label: 'Fastest turn', get: (s) => s.fastestTurnMs, format: formatDuration, better: 'low' },
+    ],
+  },
+  {
+    id: 'averages',
+    label: 'Averages',
+    rows: [
+      { label: 'Avg Power', get: (s) => s.avgPower, format: decimal },
+      { label: 'Avg damage', get: (s) => s.avgDamage, format: decimal },
+      { label: 'Avg Gems', get: (s) => s.avgGems, format: decimal },
+      { label: 'Avg turn time', get: (s) => s.avgTurnMs, format: formatDuration, better: 'none' },
+    ],
+  },
 ]
 
-/** Full-screen recap of the finished game: health over time and a side-by-side comparison. */
+function betterSeat(a: number, b: number, better: Better, summaries: readonly [PlayerSummary, PlayerSummary]): -1 | 0 | 1 {
+  if (better === 'none' || a === b) return -1
+  // A player with no turns has nothing to compare on "lowest" rows.
+  if (better === 'low') {
+    if (summaries[0].turns === 0 || summaries[1].turns === 0) return -1
+    return a < b ? 0 : 1
+  }
+  return a > b ? 0 : 1
+}
+
+/** Full-screen recap of the finished game: health over time and a tabbed side-by-side comparison. */
 export function StatsScreen({ players, log, gameMs, rounds, winner, onBack, onHome }: Props) {
+  const [tab, setTab] = useState<Tab>('totals')
   const heroes = [getHero(players[0].hero!), getHero(players[1].hero!)] as const
   const summaries = [summarize(log, 0), summarize(log, 1)] as const
   const byInfinity = log.at(-1)?.infinite ?? false
+  const loser = winner === 0 ? 1 : 0
+  const current = TABS.find((t) => t.id === tab)!
+  const few = current.rows.length <= 4
 
   return (
     <motion.div
@@ -50,7 +97,7 @@ export function StatsScreen({ players, log, gameMs, rounds, winner, onBack, onHo
         <div className="flex flex-1 flex-col">
           <h1 className="font-display text-2xl font-bold leading-none">Game stats</h1>
           <span className="mt-1 text-xs text-muted">
-            {heroes[winner].name} won{byInfinity ? ' with the Infinity Shard' : ''} · {formatDuration(gameMs)} · {rounds} rounds · {log.length} turns
+            {heroes[winner].name} won · {byInfinity ? 'Infinity Shard unleashed' : `${heroes[loser].name} down to 0 health`} · {formatDuration(gameMs)} · {rounds} rounds · {log.length} turns
           </span>
         </div>
         <Button variant="secondary" className="h-10 w-28" onClick={onBack}>
@@ -77,7 +124,23 @@ export function StatsScreen({ players, log, gameMs, rounds, winner, onBack, onHo
           <HealthChart log={log} heroes={heroes} />
         </section>
 
-        <section className="flex min-h-0 flex-col rounded-lg border border-line bg-panel px-3 py-2">
+        <section className="flex min-h-0 flex-col gap-2 rounded-lg border border-line bg-panel px-3 py-2">
+          <div role="tablist" aria-label="Stats" className="grid grid-cols-3 gap-1 rounded-md border border-line p-0.5">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                aria-selected={t.id === tab}
+                onClick={() => setTab(t.id)}
+                className={`h-8 rounded font-display text-[11px] font-bold uppercase tracking-[0.1em] transition ${
+                  t.id === tab ? 'bg-paper text-ink' : 'text-paper/70 active:bg-paper/10'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 border-b border-line pb-1.5">
             <span className="truncate font-display text-xs font-bold uppercase tracking-wider" style={{ color: heroes[0].color }}>
               {heroes[0].name}
@@ -87,17 +150,17 @@ export function StatsScreen({ players, log, gameMs, rounds, winner, onBack, onHo
               {heroes[1].name}
             </span>
           </div>
-          <div className="flex min-h-0 flex-1 flex-col justify-between pt-1">
-            {ROWS.map((row) => {
+          <div role="tabpanel" className="flex min-h-0 flex-1 flex-col justify-around">
+            {current.rows.map((row) => {
               const a = row.get(summaries[0])
               const b = row.get(summaries[1])
-              const fmt = row.format ?? ((n: number) => String(n))
-              const better = row.higherIsBetter === false ? (a < b ? 0 : b < a ? 1 : -1) : a > b ? 0 : b > a ? 1 : -1
+              const fmt = (n: number, seat: 0 | 1) => (row.format ? row.format(n, summaries[seat]) : String(n))
+              const better = betterSeat(a, b, row.better ?? 'high', summaries)
               return (
-                <div key={row.label} className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 text-sm leading-tight">
-                  <span className={`tabular-nums ${better === 0 ? 'font-bold text-paper' : 'text-paper/70'}`}>{fmt(a)}</span>
+                <div key={row.label} className={`grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 leading-tight ${few ? 'text-xl' : 'text-sm'}`}>
+                  <span className={`tabular-nums ${better === 0 ? 'font-bold text-paper' : 'text-paper/70'}`}>{fmt(a, 0)}</span>
                   <span className="text-center font-display text-[10px] font-bold uppercase tracking-[0.12em] text-muted">{row.label}</span>
-                  <span className={`text-right tabular-nums ${better === 1 ? 'font-bold text-paper' : 'text-paper/70'}`}>{fmt(b)}</span>
+                  <span className={`text-right tabular-nums ${better === 1 ? 'font-bold text-paper' : 'text-paper/70'}`}>{fmt(b, 1)}</span>
                 </div>
               )
             })}

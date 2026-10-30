@@ -40,6 +40,24 @@ describe('stats summary', () => {
     expect(p0.longestTurnMs).toBe(150_000)
   })
 
+  it('finds the best single turn', () => {
+    const p0 = summarize(log, 0)
+    expect(p0.mostPower).toBe(9)
+    expect(p0.mostGems).toBe(4)
+    expect(p0.mostMastery).toBe(2)
+    expect(p0.mostHealing).toBe(3)
+    expect(p0.fastestTurnMs).toBe(90_000)
+    expect(summarize(log, 1).fastestTurnMs).toBe(30_000)
+  })
+
+  it('averages per turn', () => {
+    const p0 = summarize(log, 0)
+    expect(p0.avgPower).toBe(7.5)
+    expect(p0.avgDamage).toBe(5)
+    expect(p0.avgGems).toBe(2)
+    expect(summarize(log, 1).avgPower).toBe(2.5)
+  })
+
   it("counts shield blocks on the defender's side", () => {
     expect(summarize(log, 1).shieldsBlocked).toBe(3)
     expect(summarize(log, 0).shieldsBlocked).toBe(0)
@@ -50,6 +68,8 @@ describe('stats summary', () => {
     expect(s.turns).toBe(0)
     expect(s.biggestHit).toBe(0)
     expect(s.avgTurnMs).toBe(0)
+    expect(s.fastestTurnMs).toBe(0)
+    expect(s.avgPower).toBe(0)
   })
 })
 

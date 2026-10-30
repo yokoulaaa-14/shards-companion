@@ -51,14 +51,35 @@ export interface PlayerSummary {
   focusUsed: number
   avgTurnMs: number
   longestTurnMs: number
+  // Best single turn.
+  mostPower: number
+  mostGems: number
+  mostMastery: number
+  mostHealing: number
+  /** 0 when the player has no turns. */
+  fastestTurnMs: number
+  // Per-turn averages.
+  avgPower: number
+  avgDamage: number
+  avgGems: number
 }
 
 export function summarize(log: TurnRecord[], seat: Seat): PlayerSummary {
   const mine = log.filter((t) => t.player === seat)
   const theirs = log.filter((t) => t.player !== seat)
   const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0)
+  const max = (pick: (t: TurnRecord) => number) => Math.max(0, ...mine.map(pick))
+  const avg = (pick: (t: TurnRecord) => number) => (mine.length ? sum(mine.map(pick)) / mine.length : 0)
   const totalMs = sum(mine.map((t) => t.durationMs))
   return {
+    mostPower: max((t) => t.power),
+    mostGems: max((t) => t.gemsGained),
+    mostMastery: max((t) => t.masteryGained),
+    mostHealing: max((t) => t.healed),
+    fastestTurnMs: mine.length ? Math.min(...mine.map((t) => t.durationMs)) : 0,
+    avgPower: avg((t) => t.power),
+    avgDamage: avg((t) => t.damage),
+    avgGems: avg((t) => t.gemsGained),
     turns: mine.length,
     damageDealt: sum(mine.map((t) => t.damage)),
     biggestHit: Math.max(0, ...mine.map((t) => t.damage)),
