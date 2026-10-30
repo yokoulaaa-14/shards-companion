@@ -93,16 +93,11 @@ export function ActivePanel({ index, player }: Props) {
           onUndo={() => undo('gems')}
           footer={
             player.boughtMasteryThisTurn ? (
-              <div className="flex gap-1.5">
-                <Button variant="secondary" className="h-8 flex-1 basis-0 whitespace-nowrap text-[11px]" disabled aria-label="Focus used this turn">
-                  ✓ Focus
+              player.buyUndoable ? (
+                <Button variant="secondary" className="h-8 w-full text-[11px]" onClick={undoBuy} aria-label="Undo focus">
+                  ↶ Undo
                 </Button>
-                {player.buyUndoable && (
-                  <Button variant="secondary" className="h-8 flex-1 basis-0 text-[11px]" onClick={undoBuy} aria-label="Undo focus">
-                    ↶ Undo
-                  </Button>
-                )}
-              </div>
+              ) : null
             ) : buyBlocked ? (
               <Button variant="secondary" className="h-8 text-[11px]" disabled>
                 {buyBlockedLabel}
