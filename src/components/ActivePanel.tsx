@@ -104,7 +104,7 @@ export function ActivePanel({ index, player }: Props) {
                 )}
               </div>
             ) : buyBlocked ? (
-              <Button variant="ghost" className="h-8 text-[11px]" disabled>
+              <Button variant="secondary" className="h-8 text-[11px]" disabled>
                 {buyBlockedLabel}
               </Button>
             ) : (
