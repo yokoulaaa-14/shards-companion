@@ -36,9 +36,8 @@ export function ActivePanel({ index, player }: Props) {
     >
       {/* Hero column */}
       <div className="flex w-[31%] min-w-[180px] flex-col gap-2">
-        <div className="flex h-6 items-center gap-2">
+        <div className={`flex h-6 items-center gap-2 ${side === 'right' ? 'pr-11' : ''}`}>
           <span className="rounded border border-paper/60 px-2 py-0.5 font-display text-xs font-bold uppercase tracking-[0.18em]">{hero.name}</span>
-          <span className="rounded bg-paper px-2 py-0.5 font-display text-[10px] font-bold uppercase tracking-[0.16em] text-ink">Your turn</span>
         </div>
         <HeroArt hero={hero.id} className="flex-1 rounded-lg" />
         <Button className="h-14 text-base" onClick={openAttack} style={{ backgroundColor: hero.color, color: '#0b0b0d' }}>
