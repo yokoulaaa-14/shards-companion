@@ -95,7 +95,7 @@ export function ActivePanel({ index, player }: Props) {
             player.boughtMasteryThisTurn ? (
               player.buyUndoable ? (
                 <Button variant="secondary" className="h-8 w-full text-[11px]" onClick={undoBuy} aria-label="Undo focus">
-                  ↶ Undo
+                  ↶ Undo focus
                 </Button>
               ) : null
             ) : buyBlocked ? (
