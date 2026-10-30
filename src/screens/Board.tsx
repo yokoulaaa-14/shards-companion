@@ -10,6 +10,9 @@ export function Board() {
   const players = useGame((s) => s.players)
   const active = useGame((s) => s.active)
 
+  // "Start a new game" clears the heroes while this screen is still fading out.
+  if (!players[0].hero || !players[1].hero) return <div className="h-full bg-ink" />
+
   const panels = [0, 1].map((i) => {
     const isActive = i === active
     return (

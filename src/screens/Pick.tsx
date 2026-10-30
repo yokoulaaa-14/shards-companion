@@ -19,9 +19,14 @@ export function Pick() {
   const taken = players[0].hero
   const isSecond = pickStep === 1
   const selectedHero = choice && choice !== 'random' ? getHero(choice) : null
+  // Subtle full-screen tint of the selected hero; grey for Random, none before a choice.
+  const tint = selectedHero?.color ?? (choice === 'random' ? RANDOM_COLOR : null)
 
   return (
-    <div className="flex h-full flex-col gap-3 px-6 py-4">
+    <div
+      className="flex h-full flex-col gap-3 px-6 py-4 transition-[background-color] duration-500"
+      style={{ backgroundColor: tint ? `color-mix(in srgb, ${tint} 16%, var(--color-ink))` : 'var(--color-ink)' }}
+    >
       <header className="flex flex-col">
         <h1 className="font-display text-2xl font-bold">Player {pickStep + 1} · pick your Shard Master</h1>
         <p className="text-sm text-muted">
@@ -50,24 +55,26 @@ export function Pick() {
           )
         })}
         <Card selected={choice === 'random'} onClick={() => setChoice('random')} color={RANDOM_COLOR} dashed>
-          <div className="relative mt-auto flex flex-col items-center pb-2">
-            <span className="font-display text-4xl font-bold text-paper/60">?</span>
-            <span className="font-display text-sm font-bold uppercase tracking-wider">Random</span>
-          </div>
+          <span className="absolute inset-0 flex items-center justify-center font-display text-4xl font-bold text-paper/60" aria-hidden="true">
+            ?
+          </span>
+          <span className="relative mt-auto pb-2 text-center font-display text-sm font-bold uppercase tracking-wider">Random</span>
         </Card>
       </div>
 
       <footer className="flex h-14 items-center gap-4">
-        <div className="flex min-h-10 flex-1 flex-col justify-center border-l-4 pl-3" style={{ borderColor: selectedHero?.color ?? RANDOM_COLOR }}>
-          {selectedHero ? (
-            <>
-              <Label>Faction {selectedHero.faction}</Label>
-              <span className="text-sm font-medium">{selectedHero.playstyle}</span>
-            </>
-          ) : choice === 'random' ? (
-            <span className="text-sm text-muted">Revealed on the next screen.</span>
-          ) : (
-            <span className="text-sm text-muted">Tap a card to select.</span>
+        <div className="flex min-h-10 flex-1 flex-col justify-center">
+          {choice && (
+            <div className="flex flex-col justify-center border-l-4 pl-3" style={{ borderColor: selectedHero?.color ?? RANDOM_COLOR }}>
+              {selectedHero ? (
+                <>
+                  <Label>Faction {selectedHero.faction}</Label>
+                  <span className="text-sm font-medium">{selectedHero.playstyle}</span>
+                </>
+              ) : (
+                <span className="text-sm text-muted">Revealed on the next screen.</span>
+              )}
+            </div>
           )}
         </div>
         <Button className="h-12 w-56" disabled={!choice} onClick={() => choice && pickHero(choice)}>

@@ -5,6 +5,7 @@ import { averageTurnMs, elapsedAt, formatDuration } from '../game/timer'
 import { opponentOf, useGame } from '../store/gameStore'
 import { HeroArt } from '../components/HeroArt'
 import { Button, Label } from '../components/ui'
+import { StatsScreen } from '../components/StatsScreen'
 
 /**
  * Starts from the VS layout, then: the winner's half strikes the loser's half,
@@ -17,6 +18,7 @@ export function EndGame() {
   const snapshot = useRef(useGame.getState()).current
   const winner = snapshot.winner
   const [stage, setStage] = useState<'strike' | 'winner'>('strike')
+  const [showStats, setShowStats] = useState(false)
 
   useEffect(() => {
     const t = setTimeout(() => setStage('winner'), 1400)
@@ -28,14 +30,41 @@ export function EndGame() {
   const winHero = getHero(snapshot.players[winner].hero!)
   const loseHero = getHero(snapshot.players[loser].hero!)
   const gameMs = elapsedAt(snapshot.timer, Date.now())
+  const rounds = Math.max(1, Math.ceil(snapshot.turn / 2))
   const stats = {
     time: formatDuration(gameMs),
-    turns: snapshot.turn,
+    rounds,
     avgTurn: formatDuration(averageTurnMs(gameMs, snapshot.turn)),
     // A win by Infinity Shard leaves the opponent with health left.
     byInfinity: snapshot.players[loser].health > 0,
   }
-  return <EndGameView winner={winner} winHero={winHero} loseHero={loseHero} stats={stats} stage={stage} onRestart={finishGame} />
+  return (
+    <>
+      <EndGameView
+        winner={winner}
+        winHero={winHero}
+        loseHero={loseHero}
+        stats={stats}
+        stage={stage}
+        onHome={finishGame}
+        onShowStats={() => setShowStats(true)}
+      />
+      <AnimatePresence>
+        {showStats && (
+          <StatsScreen
+            key="stats"
+            players={snapshot.players}
+            log={snapshot.log}
+            gameMs={gameMs}
+            rounds={rounds}
+            winner={winner}
+            onBack={() => setShowStats(false)}
+            onHome={finishGame}
+          />
+        )}
+      </AnimatePresence>
+    </>
+  )
 }
 
 function EndGameView({
@@ -44,14 +73,16 @@ function EndGameView({
   loseHero,
   stats,
   stage,
-  onRestart,
+  onHome,
+  onShowStats,
 }: {
   winner: 0 | 1
   winHero: ReturnType<typeof getHero>
   loseHero: ReturnType<typeof getHero>
-  stats: { time: string; turns: number; avgTurn: string; byInfinity: boolean }
+  stats: { time: string; rounds: number; avgTurn: string; byInfinity: boolean }
   stage: 'strike' | 'winner'
-  onRestart: () => void
+  onHome: () => void
+  onShowStats: () => void
 }) {
 
   const winnerSide = winner === 0 ? 'left' : 'right'
@@ -117,17 +148,25 @@ function EndGameView({
               </p>
               <div className="grid grid-cols-3 gap-2">
                 <Stat label="Game time" value={stats.time} />
-                <Stat label="Turns" value={String(stats.turns)} />
+                <Stat label="Rounds" value={String(stats.rounds)} />
                 <Stat label="Avg turn" value={stats.avgTurn} />
               </div>
               <div className="mt-1 border-l-4 border-ink pl-3">
                 <span className="font-display text-[10px] font-bold uppercase tracking-[0.18em] text-ink/70">Faction {winHero.faction}</span>
                 <p className="text-sm font-medium">{winHero.playstyle.split('.')[0]}</p>
               </div>
-              <p className="text-sm italic text-ink/80">“{winHero.tagline}”</p>
-              <Button className="mt-2 h-13" style={{ backgroundColor: '#0b0b0d', color: '#f4f2ec' }} onClick={onRestart}>
-                Restart a new game
-              </Button>
+              <div className="mt-2 flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={onShowStats}
+                  className="inline-flex h-12 flex-1 items-center justify-center rounded-md border-2 border-ink font-display font-bold uppercase tracking-[0.12em] text-ink transition active:scale-[0.97] active:bg-ink/10"
+                >
+                  Show stats
+                </button>
+                <Button className="h-12 flex-1" style={{ backgroundColor: '#0b0b0d', color: '#f4f2ec' }} onClick={onHome}>
+                  Back to home
+                </Button>
+              </div>
             </div>
           </motion.div>
         )}

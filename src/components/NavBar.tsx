@@ -3,16 +3,17 @@ import { elapsedAt, formatDuration, isRunning } from '../game/timer'
 import { useGame } from '../store/gameStore'
 import { Label } from './ui'
 
-/** Top bar of the board: turn number, game timer, menu. */
+/** Top bar of the board: round number, game timer, menu. */
 export function NavBar() {
-  const turn = useGame((s) => s.turn)
+  // A round is both players playing once: turns 1-2 are round 1, 3-4 round 2.
+  const round = useGame((s) => Math.max(1, Math.ceil(s.turn / 2)))
   const openMenu = useGame((s) => s.openMenu)
 
   return (
     <div className="grid h-9 shrink-0 grid-cols-3 items-center border-b border-line bg-ink px-3">
       <div className="flex items-baseline gap-2">
-        <Label>Turn</Label>
-        <span className="font-display text-lg font-bold leading-none tabular-nums">{turn}</span>
+        <Label>Round</Label>
+        <span className="font-display text-lg font-bold leading-none tabular-nums">{round}</span>
       </div>
 
       <GameClock />
