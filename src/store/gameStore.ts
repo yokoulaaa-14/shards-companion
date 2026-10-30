@@ -40,6 +40,7 @@ interface GameState {
   resumeGame: () => void
   openPhotos: () => void
   goHome: () => void
+  finishGame: () => void
   pickHero: (choice: HeroId | 'random') => void
   fight: () => void
   tap: (resource: Resource, delta: number) => void
@@ -86,6 +87,10 @@ export const useGame = create<GameState>()(
 
       openPhotos: () => set({ phase: 'photos' }),
       goHome: () => set({ phase: 'home' }),
+
+      /** After the end game: wipe the finished game and return to the home screen. */
+      finishGame: () =>
+        set({ phase: 'home', pickStep: 0, players: freshPlayers(), active: 0, turn: 0, attack: null, winner: null, pending: null }),
 
       pickHero: (choice) => {
         const { pickStep, players } = get()

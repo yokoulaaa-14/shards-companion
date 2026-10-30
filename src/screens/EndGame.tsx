@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { getHero } from '../game/heroes'
 import { opponentOf, useGame } from '../store/gameStore'
@@ -10,18 +10,38 @@ import { Button, Label } from '../components/ui'
  * the loser fades out, and the winner settles at the centre on their own colour.
  */
 export function EndGame() {
-  const players = useGame((s) => s.players)
-  const winner = useGame((s) => s.winner)!
-  const startNewGame = useGame((s) => s.startNewGame)
-  const loser = opponentOf(winner)
-  const winHero = getHero(players[winner].hero!)
-  const loseHero = getHero(players[loser].hero!)
+  const finishGame = useGame((s) => s.finishGame)
+  // Snapshot the result on mount: the store is reset by "Restart" while this
+  // screen is still fading out, and it must keep rendering the finished game.
+  const snapshot = useRef(useGame.getState()).current
+  const winner = snapshot.winner
   const [stage, setStage] = useState<'strike' | 'winner'>('strike')
 
   useEffect(() => {
     const t = setTimeout(() => setStage('winner'), 1400)
     return () => clearTimeout(t)
   }, [])
+
+  if (winner === null) return null
+  const loser = opponentOf(winner)
+  const winHero = getHero(snapshot.players[winner].hero!)
+  const loseHero = getHero(snapshot.players[loser].hero!)
+  return <EndGameView winner={winner} winHero={winHero} loseHero={loseHero} stage={stage} onRestart={finishGame} />
+}
+
+function EndGameView({
+  winner,
+  winHero,
+  loseHero,
+  stage,
+  onRestart,
+}: {
+  winner: 0 | 1
+  winHero: ReturnType<typeof getHero>
+  loseHero: ReturnType<typeof getHero>
+  stage: 'strike' | 'winner'
+  onRestart: () => void
+}) {
 
   const winnerSide = winner === 0 ? 'left' : 'right'
   const strikeX = winnerSide === 'left' ? 140 : -140
@@ -30,7 +50,7 @@ export function EndGame() {
     <div className="relative h-full overflow-hidden" style={{ backgroundColor: stage === 'winner' ? winHero.color : 'var(--color-ink)', transition: 'background-color 600ms' }}>
       <AnimatePresence>
         {stage === 'strike' && (
-          <motion.div key="strike" className={`absolute inset-0 flex ${winnerSide === 'left' ? '' : 'flex-row-reverse'}`} exit={{ opacity: 0, transition: { duration: 0.2 } }}>
+          <div key="strike" className={`absolute inset-0 flex ${winnerSide === 'left' ? '' : 'flex-row-reverse'}`}>
             <motion.div
               className="relative flex-1"
               initial={{ x: 0, skewX: 0 }}
@@ -59,7 +79,7 @@ export function EndGame() {
             >
               <span className="rotate-12 rounded-xl border-4 border-paper bg-ink px-6 py-3 font-display text-5xl font-bold shadow-[6px_6px_0_#f4f2ec]">HIT</span>
             </motion.div>
-          </motion.div>
+          </div>
         )}
 
         {stage === 'winner' && (
@@ -89,7 +109,7 @@ export function EndGame() {
                 <p className="text-sm font-medium">{winHero.playstyle.split('.')[0]}</p>
               </div>
               <p className="text-sm italic text-ink/80">“{winHero.tagline}”</p>
-              <Button className="mt-2 h-13" style={{ backgroundColor: '#0b0b0d', color: '#f4f2ec' }} onClick={startNewGame}>
+              <Button className="mt-2 h-13" style={{ backgroundColor: '#0b0b0d', color: '#f4f2ec' }} onClick={onRestart}>
                 Restart a new game
               </Button>
             </div>

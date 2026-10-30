@@ -2,7 +2,7 @@ import { getHero } from '../game/heroes'
 import { canBuyMastery, MAX_HEALTH, MAX_MASTERY } from '../game/rules'
 import type { PlayerState } from '../game/types'
 import { useGame, type PlayerIndex } from '../store/gameStore'
-import { Counter } from './Counter'
+import { CardFooter, Counter } from './Counter'
 import { HeroArt } from './HeroArt'
 import { MasteryBar } from './MasteryBar'
 import { Button, Label } from './ui'
@@ -27,7 +27,7 @@ export function ActivePanel({ index, player }: Props) {
 
   const side = index === 0 ? 'left' : 'right'
   const buyBlocked = !canBuyMastery(player) && !player.boughtMasteryThisTurn
-  const buyBlockedLabel = player.mastery >= MAX_MASTERY ? 'Mastery is maxed' : 'Buy +1 · need 1 gem'
+  const buyBlockedLabel = player.mastery >= MAX_MASTERY ? 'Mastery is maxed' : 'Focus : need 1 gem'
 
   return (
     <div
@@ -75,29 +75,8 @@ export function ActivePanel({ index, player }: Props) {
           undoAmount={player.undo.mastery}
           onTap={(d) => tap('mastery', d)}
           onUndo={() => undo('mastery')}
-        >
-          <MasteryBar mastery={player.mastery} />
-          {player.boughtMasteryThisTurn ? (
-            <div className="flex gap-1.5">
-              <Button variant="secondary" className="h-8 flex-1 whitespace-nowrap text-[10px]" disabled>
-                ✓ Bought this turn
-              </Button>
-              {player.buyUndoable && (
-                <Button variant="ghost" className="h-8 w-20 text-[11px]" onClick={undoBuy} aria-label="Undo buy mastery">
-                  ↶ Undo
-                </Button>
-              )}
-            </div>
-          ) : buyBlocked ? (
-            <Button variant="ghost" className="h-8 text-[11px]" disabled>
-              {buyBlockedLabel}
-            </Button>
-          ) : (
-            <Button variant="secondary" className="h-8 text-[11px]" onClick={buy}>
-              Buy +1 · costs 1 gem
-            </Button>
-          )}
-        </Counter>
+          footer={<MasteryBar mastery={player.mastery} />}
+        />
 
         <Counter
           label="Gems"
@@ -107,6 +86,28 @@ export function ActivePanel({ index, player }: Props) {
           undoAmount={player.undo.gems}
           onTap={(d) => tap('gems', d)}
           onUndo={() => undo('gems')}
+          footer={
+            player.boughtMasteryThisTurn ? (
+              <div className="flex gap-1.5">
+                <Button variant="secondary" className="h-8 flex-1 basis-0 whitespace-nowrap text-[11px]" disabled aria-label="Focus used this turn">
+                  ✓ Focus
+                </Button>
+                {player.buyUndoable && (
+                  <Button variant="ghost" className="h-8 flex-1 basis-0 text-[11px]" onClick={undoBuy} aria-label="Undo focus">
+                    ↶ Undo
+                  </Button>
+                )}
+              </div>
+            ) : buyBlocked ? (
+              <Button variant="ghost" className="h-8 text-[11px]" disabled>
+                {buyBlockedLabel}
+              </Button>
+            ) : (
+              <Button variant="secondary" className="h-8 text-[11px]" onClick={buy}>
+                Focus : −1 gem, +1 mastery
+              </Button>
+            )
+          }
         />
 
         {player.powerInfinite ? (
@@ -114,10 +115,14 @@ export function ActivePanel({ index, player }: Props) {
             <div className="flex h-5 items-center">
               <Label>Power</Label>
             </div>
-            <div className="flex flex-1 items-center justify-center rounded-md bg-paper font-display text-5xl font-bold text-ink">∞</div>
-            <Button variant="ghost" className="h-8 text-[11px]" onClick={toggleInfinity}>
-              ↶ Cancel infinity
-            </Button>
+            <div className="flex flex-1 items-center justify-center">
+              <span className="rounded-md bg-paper px-4 font-display text-5xl font-bold leading-none text-ink">∞</span>
+            </div>
+            <CardFooter>
+              <Button variant="ghost" className="h-8 text-[11px]" onClick={toggleInfinity}>
+                ↶ Cancel infinity
+              </Button>
+            </CardFooter>
           </div>
         ) : (
           <Counter
@@ -128,11 +133,12 @@ export function ActivePanel({ index, player }: Props) {
             undoAmount={player.undo.power}
             onTap={(d) => tap('power', d)}
             onUndo={() => undo('power')}
-          >
-            <Button variant="ghost" className="h-8 text-[11px]" onClick={toggleInfinity}>
-              ∞ Infinity Shard
-            </Button>
-          </Counter>
+            footer={
+              <Button variant="ghost" className="h-8 text-[11px]" onClick={toggleInfinity}>
+                ∞ Infinity Shard
+              </Button>
+            }
+          />
         )}
       </div>
     </div>

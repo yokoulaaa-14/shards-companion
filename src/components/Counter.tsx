@@ -13,13 +13,13 @@ interface Props {
   onTap?: (delta: number) => void
   onUndo?: () => void
   disabled?: boolean
-  /** Extra content under the stepper (buy button, mastery bar, infinity toggle). */
-  children?: ReactNode
+  /** Content of the fixed-height footer slot (button or bar). Every card has the slot so steppers line up. */
+  footer?: ReactNode
 }
 
 const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`)
 
-export function Counter({ label, hint, value, pending, undoAmount, onTap, onUndo, disabled, children }: Props) {
+export function Counter({ label, hint, value, pending, undoAmount, onTap, onUndo, disabled, footer }: Props) {
   const hasPending = !!pending
   const hasUndo = !hasPending && !!undoAmount && !!onUndo
   return (
@@ -69,7 +69,12 @@ export function Counter({ label, hint, value, pending, undoAmount, onTap, onUndo
         </Tap>
       </div>
 
-      {children}
+      <CardFooter>{footer}</CardFooter>
     </div>
   )
+}
+
+/** Fixed-height footer so the stepper rows of all four cards sit on the same line. */
+export function CardFooter({ children }: { children?: ReactNode }) {
+  return <div className="flex h-8 shrink-0 flex-col justify-center">{children}</div>
 }
