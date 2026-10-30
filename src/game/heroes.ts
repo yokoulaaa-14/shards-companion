@@ -63,8 +63,11 @@ export function getHero(id: HeroId): Hero {
   return hero
 }
 
-export function artUrl(id: HeroId): string {
-  return `/art/${id}.jpg`
+/** Extensions accepted for local art files in /public/art (dev only, git-ignored). */
+export const ART_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'] as const
+
+export function artUrls(id: HeroId): string[] {
+  return ART_EXTENSIONS.map((ext) => `/art/${id}.${ext}`)
 }
 
 /** Pick a random hero among those not in `taken`. */
